@@ -30,8 +30,9 @@
             <div class="col-md-7">
                 <div class="card-body">
                     <h4 class="card-title">{{ $atks->nama }}</h4>
+                         <p><strong>Stok:</strong> {{ $atks->stok }}</p>
                     <p><strong>Kategori:</strong> {{ $atks->kategori }}</p>
-                    <p><strong>Stok:</strong> {{ $atks->stok }}</p>
+                    <p><strong>Lokasi:</strong> {{ $atks->lokasi }}</p>
                     <p><strong>Deskripsi:</strong><br>{{ $atks->deskripsi}}</p>
                 </div>
             </div>

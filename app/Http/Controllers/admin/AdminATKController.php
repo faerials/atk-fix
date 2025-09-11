@@ -10,26 +10,47 @@ class AdminATKController extends Controller
 {
 
     //tampil
-public function index(Request $request)
+    public function index(Request $request)
 {
     $query = $request->input('q');
+    $sort = $request->input('sort'); // ambil filter sort
 
+    // mulai query builder
+    $atks = Atk::query();
+
+    // filter pencarian
     if ($query) {
-        $atks = Atk::where('nama', 'like', "%{$query}%")
-                    ->orWhere('kategori', 'like', "%{$query}%")
-                    ->paginate(15);
+        $atks->where(function ($q2) use ($query) {
+            $q2->where('nama', 'like', "%{$query}%")
+               ->orWhere('kategori', 'like', "%{$query}%");
+        });
+    }
+
+    // filter sorting
+    if ($sort === 'asc') {
+        $atks->orderBy('nama', 'asc');
+    } elseif ($sort === 'desc') {
+        $atks->orderBy('nama', 'desc');
     } else {
-        $atks = Atk::paginate(15);
-    }   
+        // default: data terbaru
+        $atks->orderBy('created_at', 'desc');
+    }
+
+    // jalankan query
+    $atks = $atks->paginate(15)->withQueryString();
 
     return view('admin.index', compact('atks'));
 }
 
-       public function filter($kategori)
-{
-    $atks = ATK::where('kategori', $kategori)->paginate(15);
-    return view('admin.index', compact('atks', 'kategori'));
-} 
+
+
+    
+
+    public function filter($kategori)
+    {
+        $atks = ATK::where('kategori', $kategori)->paginate(15);
+        return view('admin.index', compact('atks', 'kategori'));
+    }
     //tambah
     public function create()
     {
@@ -38,25 +59,25 @@ public function index(Request $request)
 
     public function store(Request $request)
     {
-       $validated = $request->validate([
+        $validated = $request->validate([
             'nama' => 'required|string',
             'kategori' => 'required',
             'stok' => 'required|integer',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-             'deskripsi' => 'nullable|string',
-             'lokasi'=> 'required|string',
+            'deskripsi' => 'nullable|string',
+            'lokasi' => 'required|string',
         ]);
 
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
-            $filename = time().'_'.$file->getClientOriginalName();
+            $filename = time() . '_' . $file->getClientOriginalName();
             $file->move(public_path('uploads/atk'), $filename);
             $validated['gambar'] = $filename;
         }
-    
+
         // Simpan ke database
         Atk::create($validated);
-    
+
 
         return redirect()->route('admin.index')->with('success', 'ATK berhasil ditambahkan');
     }
@@ -76,14 +97,14 @@ public function index(Request $request)
             'stok' => 'required|integer',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'deskripsi' => 'required',
-            'lokasi'=> 'required',
+            'lokasi' => 'required',
         ]);
 
         $atks = Atk::findOrFail($id);
 
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
-            $filename = time().'_'.$file->getClientOriginalName();
+            $filename = time() . '_' . $file->getClientOriginalName();
             $file->move(public_path('uploads/atk'), $filename);
             $validated['gambar'] = $filename;
         }
@@ -105,6 +126,13 @@ public function index(Request $request)
     {
         $atks = Atk::findOrFail($id);
         return view('admin.show', compact('atks'));
+    }
+
+    public function search()
+    {
+        $query = request('q');
+        $atks = Atk::where('nama', 'like', "%$query%")->paginate(15);
+        return view('admin.index', compact('atks'));
     }
 }
 
